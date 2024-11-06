@@ -1,0 +1,113 @@
+---
+title: "Penguin quarto"
+format: html
+editor: visual
+---
+
+# initialisation
+
+```{r}
+#|echo: false
+library(tidyverse)
+library(here)
+library(palmerpenguins)
+library(janitor)
+```
+
+## renv
+
+allows us to keep track of installed libraries and their versions
+
+ensures that other people can run everything correctly
+
+```{r}
+renv::init()
+```
+
+```{r}
+renv::snapshot()
+```
+
+You can add options to executable code like this
+
+```{r}
+colnames(penguins_raw)
+```
+
+```{r}
+write.csv(penguins_raw, here("data","penguins_raw.csv"))
+```
+
+here is a relative path, goes to the current folder. Allows it to be used on other
+
+# modifying columns
+
+```{r}
+penguins_clean <- penguins_raw %>% 
+  select(-Comments) %>% 
+  select(-starts_with("Delta")) %>% 
+  clean_names()
+
+colnames(penguins_clean)
+
+write.csv(penguins_clean, here("data","penguins_clean.csv"))
+```
+
+## as a function
+
+shorten_species()
+
+```{r}
+cleaning_columns <- function(raw_data){
+  raw_data %>% 
+    select(-Comments) %>% 
+    select(-starts_with("Delta")) %>% 
+    clean_names()
+}
+
+baby_boi <- cleaning_columns(penguins_raw)
+```
+
+## cleaning up NAs
+
+in this we are creating a new variable which has the NA removed, if we remove them from all comuns at once then it will remove all observations with an NA in any column
+
+```{r}
+# only removes data from species and flipper length
+penguins_flippers <- penguins_clean %>%
+  select(species, flipper_length_mm) %>%
+  drop_na() %>% 
+  shorten_species()
+```
+
+# reproducable figures
+
+## exploratory figures
+
+shows the raw data, always have to be shown when working with data
+
+classic graphs and stuff like that
+
+nothing fitted to or hypothesis testy
+
+### boxplot
+
+```{r}
+species_colours <- c("Adelie" = "darkorange",
+                       "Chinstrap" = "purple",
+                       "Gentoo" = "cyan4")
+
+BoxFlip <- ggplot(data = penguins_flippers, 
+                  aes(x = species, 
+                      y = flipper_length_mm)) +
+  geom_boxplot(aes(colour = species)
+               ,show.legend = FALSE,
+               width = 0,5) +
+  geom_jitter(aes(colour = species), 
+              position = position_jitter(seed = 0)) +
+  theme_bw()+
+  scale_colour_manual(values = species_colours) +
+  labs(x = "species", y = "Flipper Length (mm)")
+
+BoxFlip
+```
